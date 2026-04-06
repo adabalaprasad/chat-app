@@ -21,6 +21,7 @@
             display: flex;
             flex-direction: column;
             background: white;
+            overflow: hidden;
         }
 
         .header {
@@ -30,6 +31,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-shrink: 0;
         }
 
         .avatar {
@@ -101,6 +103,9 @@
             padding: 10px;
             background: white;
             border-top: 1px solid #ddd;
+            position: sticky;
+            bottom: 0;
+            flex-shrink: 0;
         }
 
         #msg {
@@ -188,12 +193,18 @@ stompClient.connect({}, function() {
             "<div>" + msg.content + "</div>" +
             "<div class='time'>" + time + "</div>";
 
-        document.getElementById("messages").appendChild(li);
+        let chatBox = document.getElementById("messages");
+
+        let isNearBottom =
+            chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 100;
+
+        chatBox.appendChild(li);
 
         document.getElementById("statusText").textContent = "online";
 
-        let chatBox = document.getElementById("messages");
-        chatBox.scrollTop = chatBox.scrollHeight;
+        if (isNearBottom) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
     });
 
     stompClient.subscribe('/topic/typing', function(message) {
