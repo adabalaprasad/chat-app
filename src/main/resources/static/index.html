@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title> Chat APP </title>
+    <title>Chat APP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
 
@@ -9,19 +11,19 @@
         body {
             font-family: Arial;
             background: #f4f6f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            padding: 0;
         }
 
         .chat-container {
-            width: 400px;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            margin: auto;
             background: white;
-            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            overflow: hidden;
         }
 
         .header {
@@ -36,7 +38,7 @@
             list-style: none;
             padding: 15px;
             margin: 0;
-            height: 350px;
+            flex: 1;
             overflow-y: auto;
             background: #fafafa;
         }
@@ -45,26 +47,34 @@
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 12px;
-            max-width: 70%;
+            max-width: 75%;
+            word-wrap: break-word;
             clear: both;
         }
 
         .my-message {
             background: #dcf8c6;
-            float: right;
+            margin-left: auto;
             text-align: right;
         }
 
         .other-message {
             background: #eeeeee;
-            float: left;
+            margin-right: auto;
             text-align: left;
+        }
+
+        .sender-name {
+            font-size: 12px;
+            color: gray;
+            margin-bottom: 4px;
         }
 
         .input-area {
             display: flex;
             padding: 10px;
             border-top: 1px solid #ddd;
+            background: white;
         }
 
         #msg {
@@ -90,6 +100,20 @@
             padding: 8px;
             color: gray;
             font-size: 14px;
+        }
+
+        @media (max-width: 480px) {
+            .chat-container {
+                max-width: 100%;
+            }
+
+            .header {
+                font-size: 18px;
+            }
+
+            button {
+                padding: 10px;
+            }
         }
     </style>
 </head>
