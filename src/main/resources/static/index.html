@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Chat APP </title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .chat-container {
+            width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+        }
+
+        #messages {
+            list-style: none;
+            padding: 15px;
+            margin: 0;
+            height: 350px;
+            overflow-y: auto;
+            background: #fafafa;
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            max-width: 70%;
+            clear: both;
+        }
+
+        .my-message {
+            background: #dcf8c6;
+            float: right;
+            text-align: right;
+        }
+
+        .other-message {
+            background: #eeeeee;
+            float: left;
+            text-align: left;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        #msg {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 10px 15px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .username {
+            text-align: center;
+            padding: 8px;
+            color: gray;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header"> Chat APP </div>
+    <div class="username" id="userLabel"></div>
+
+    <ul id="messages"></ul>
+
+    <div class="input-area">
+        <input id="msg" placeholder="Type message..." onkeypress="handleKey(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+let sender = "";
+
+window.onload = function() {
+    sender = prompt("Enter your name");
+
+    if (!sender || sender.trim() === "") {
+        sender = "Anonymous";
+    }
+
+    document.getElementById("userLabel").textContent = "You are: " + sender;
+};
+
+let socket = new SockJS('/chat');
+let stompClient = Stomp.over(socket);
+
+stompClient.connect({}, function() {
+    stompClient.subscribe('/topic/messages', function(message) {
+        let msg = JSON.parse(message.body);
+
+        let li = document.createElement("li");
+        li.classList.add("message");
+
+        if (msg.sender === sender) {
+            li.classList.add("my-message");
+        } else {
+            li.classList.add("other-message");
+        }
+
+        li.textContent = msg.sender + ": " + msg.content;
+
+        document.getElementById("messages").appendChild(li);
+
+        let chatBox = document.getElementById("messages");
+        chatBox.scrollTop = chatBox.scrollHeight;
+    });
+});
+
+function sendMessage() {
+    let msgInput = document.getElementById("msg");
+    let msg = msgInput.value.trim();
+
+    if(msg !== "") {
+        stompClient.send("/app/send", {}, JSON.stringify({
+            sender: sender,
+            content: msg
+        }));
+
+        msgInput.value = "";
+    }
+}
+
+function handleKey(event) {
+    if(event.key === "Enter") {
+        sendMessage();
+    }
+}
+</script>
+
+</body>
+</html>
