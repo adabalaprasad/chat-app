@@ -10,137 +10,155 @@
 
     <style>
         body {
-            font-family: Arial;
-            background: #f4f6f8;
             margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: #ece5dd;
         }
 
         .chat-container {
-            width: 100%;
-            max-width: 400px;
-            height: 100vh;
+            max-width: 450px;
             margin: auto;
-            background: white;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            background: white;
         }
 
         .header {
-            background: #4CAF50;
+            background: #075e54;
             color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 20px;
-            flex-shrink: 0;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .username {
-            text-align: center;
-            padding: 8px;
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: #25d366;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-text small {
+            font-size: 12px;
+            color: #d3f8d3;
+        }
+
+        #typing {
+            padding: 5px 15px;
+            font-size: 12px;
             color: gray;
-            font-size: 14px;
-            flex-shrink: 0;
+            min-height: 18px;
         }
 
         #messages {
             list-style: none;
-            padding: 15px;
             margin: 0;
+            padding: 10px;
             flex: 1;
             overflow-y: auto;
-            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            background: #ece5dd;
         }
 
         .message {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 12px;
             max-width: 75%;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            border-radius: 10px;
             word-wrap: break-word;
+            position: relative;
         }
 
         .my-message {
+            align-self: flex-end;
             background: #dcf8c6;
-            margin-left: auto;
-            text-align: right;
         }
 
         .other-message {
-            background: #eeeeee;
-            margin-right: auto;
-            text-align: left;
+            align-self: flex-start;
+            background: white;
         }
 
         .sender-name {
             font-size: 12px;
             color: gray;
             margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .time {
+            font-size: 10px;
+            text-align: right;
+            color: gray;
+            margin-top: 4px;
         }
 
         .input-area {
             display: flex;
             padding: 10px;
-            border-top: 1px solid #ddd;
             background: white;
-            position: sticky;
-            bottom: 0;
-            flex-shrink: 0;
+            border-top: 1px solid #ddd;
         }
 
         #msg {
             flex: 1;
             padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+            border: none;
+            border-radius: 20px;
+            background: #f0f0f0;
             outline: none;
-            font-size: 16px;
         }
 
         button {
             margin-left: 10px;
-            padding: 10px 15px;
             border: none;
-            background: #4CAF50;
+            background: #25d366;
             color: white;
-            border-radius: 8px;
+            padding: 10px 15px;
+            border-radius: 50%;
             cursor: pointer;
-        }
-
-        @media (max-width: 480px) {
-            .chat-container {
-                max-width: 100%;
-            }
-
-            .header {
-                font-size: 18px;
-            }
-
-            button {
-                padding: 10px;
-            }
         }
     </style>
 </head>
 <body>
 
 <div class="chat-container">
-    <div class="header">Chat APP</div>
-    <div class="username" id="userLabel"></div>
+
+    <div class="header">
+        <div class="avatar" id="avatar"></div>
+        <div class="header-text">
+            <span id="userLabel"></span>
+            <small>online</small>
+        </div>
+    </div>
+
+    <div id="typing"></div>
 
     <ul id="messages"></ul>
 
     <div class="input-area">
-        <input id="msg" placeholder="Type message..." onkeypress="handleKey(event)">
-        <button onclick="sendMessage()">Send</button>
+        <input id="msg" placeholder="Type a message..." onkeypress="handleKey(event)">
+        <button onclick="sendMessage()">➤</button>
     </div>
+
 </div>
 
 <script>
+
 let sender = "";
+let typingTimeout;
 
 window.onload = function() {
     sender = prompt("Enter your name");
@@ -149,14 +167,17 @@ window.onload = function() {
         sender = "Anonymous";
     }
 
-    document.getElementById("userLabel").textContent = "You are: " + sender;
+    document.getElementById("userLabel").textContent = sender;
+    document.getElementById("avatar").textContent = sender.charAt(0).toUpperCase();
 };
 
 let socket = new SockJS('/chat');
 let stompClient = Stomp.over(socket);
 
 stompClient.connect({}, function() {
+
     stompClient.subscribe('/topic/messages', function(message) {
+
         let msg = JSON.parse(message.body);
 
         let li = document.createElement("li");
@@ -168,20 +189,48 @@ stompClient.connect({}, function() {
             li.classList.add("other-message");
         }
 
-        li.innerHTML = "<div class='sender-name'>" + msg.sender + "</div>" + msg.content;
+        let time = new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        li.innerHTML =
+            "<div class='sender-name'>" + msg.sender + "</div>" +
+            "<div>" + msg.content + "</div>" +
+            "<div class='time'>" + time + "</div>";
 
         document.getElementById("messages").appendChild(li);
+
+        document.getElementById("typing").textContent = "";
 
         let chatBox = document.getElementById("messages");
         chatBox.scrollTop = chatBox.scrollHeight;
     });
+
+    stompClient.subscribe('/topic/typing', function(message) {
+
+        let typingUser = message.body;
+
+        if (typingUser !== sender) {
+            document.getElementById("typing").textContent = typingUser + " is typing...";
+
+            clearTimeout(typingTimeout);
+
+            typingTimeout = setTimeout(() => {
+                document.getElementById("typing").textContent = "";
+            }, 1500);
+        }
+    });
+
 });
 
 function sendMessage() {
+
     let msgInput = document.getElementById("msg");
     let msg = msgInput.value.trim();
 
     if (msg !== "") {
+
         stompClient.send("/app/send", {}, JSON.stringify({
             sender: sender,
             content: msg
@@ -189,19 +238,18 @@ function sendMessage() {
 
         msgInput.value = "";
         msgInput.focus();
-
-        let chatBox = document.getElementById("messages");
-        setTimeout(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 100);
     }
 }
 
 function handleKey(event) {
+
+    stompClient.send("/app/typing", {}, sender);
+
     if (event.key === "Enter") {
         sendMessage();
     }
 }
+
 </script>
 
 </body>
